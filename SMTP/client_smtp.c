@@ -40,7 +40,7 @@ char* host = "smtp.alphanet.ch";
 const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentification)
 
 int connect_client(const char* host);
-void disconnect();
+void disconnect_client(int connection);
 int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver);
 int read_server(int connection);
 void write_message();
@@ -100,7 +100,7 @@ int connect_client(const char* host){
 
     if (connection < -1){
         perror("socket() creation failed.\n");
-		return -1;
+		disconnect_client(connection);
 		
     }else{
         struct sockaddr_in serverEndpoint;
@@ -109,7 +109,7 @@ int connect_client(const char* host){
 
         if (!hostPointer){
 			fprintf(stderr, "getHostByName() failed: %s.\n", hstrerror(h_errno));
-			return -1;
+			disconnect_client(connection);
 			
         }else{
             serverEndpoint.sin_family = AF_INET;
@@ -118,7 +118,7 @@ int connect_client(const char* host){
 
 			if (connect(connection, (struct sockaddr *) &serverEndpoint, sizeof(serverEndpoint)) != 0){
 				perror("connect() failed");
-				return -1;
+				disconnect_client(connection);
 				
 			}else{
 				printf("Connected to Banana spammer\n");
@@ -162,6 +162,7 @@ int error_tester(int connection){
 				default:
 				perror("What a potato.. The error code is not possible =( \n");
 			}
+		disconnect_client(connection);
 		exit(1);
 			
 	    case '2':
@@ -178,10 +179,17 @@ int error_tester(int connection){
 		
 	    case '5':
 	    perror("The server has encountered an error.\n");
+		disconnect_client(connection);
 		exit(5);
 	    
 		default:
 	    perror("What a potato.. The error code is not possible =( \n");
+		disconnect_client(connection);
 		exit(6);
     	}
+}
+
+void disconnect_client(int connection) {
+    shutdown(connection, 2);
+    close(connection);
 }
