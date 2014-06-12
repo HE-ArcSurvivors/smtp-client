@@ -16,6 +16,7 @@
  * http://www.samlogic.net/articles/smtp-commands-reference.htm //SMTP commands
  * http://www.serversmtp.com/en/smtp-error //SMTP error codes
  * http://email.about.com/cs/standards/a/smtp_error_code.htm //SMTP error codes in a nutshell
+ * http://pic.dhe.ibm.com/infocenter/tpfhelp/current/index.jsp?topic=%2Fcom.ibm.ztpf-ztpfdf.doc_put.cur%2Fgtpc2%2Fcpp_write.html //write
  */
 
 
@@ -32,19 +33,20 @@
 
 char* sender = "roman.yakovenko@he-arc.ch";
 char* receiver = "benjamin.margueron@he-arc.ch";
-//char* default_sender = "benjamin.margueron@he-arc.ch";
-//char* default_reciever = "roman.yakovenko@he-arc.ch";
+//char* sender = "benjamin.margueron@he-arc.ch";
+//char* receiver = "roman.yakovenko@he-arc.ch";
 char* subject = "test";
 char* message = "data";
-char* host = "smtp.alphanet.ch";
+//char* host = "smtp.alphanet.ch";
+char* host = "157.26.64.10";
 const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentification)
 
 int connect_client(const char* host);
 void disconnect_client(int connection);
 int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver);
-int read_server(int connection);
-void write_message();
-int error_tester(int connection);
+int read_server(const int connection);
+void create_message(const int connection, char* lineToAdd);
+int error_tester(const int connection);
 
 int main(int argc, char** argv)
 {
@@ -71,22 +73,50 @@ int main(int argc, char** argv)
 
     send_message(sender,subject,message,host,receiver);
 
-
-
     return 0;
 }
 
 int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver){
 
     int connection;
+	FILE *build_message;
+	char buffer[1024];
+
 
     printf("Hello world! Sending BANANA COOKIES for the win :)\n\n");
 
 	printf("Initializing the banana mailer\n");
     connection = connect_client(host);
-
+	
+	printf("\nLet\'s build our Banana Spam now\n");
+	sprintf(buffer, "HELO client");
+	create_message(connection, buffer);
+	read_server(connection);
+	sprintf(buffer, "MAIL FROM:<%s>", sender);
+	create_message(connection, buffer);
+	read_server(connection);
+	sprintf(buffer, "RCPT TO:<%s>", receiver);
+	create_message(connection, "DATA");
+	read_server(connection);
+	sprintf(buffer, "Subject: %s", subject);
+	create_message(connection, buffer);
+	read_server(connection);
+	sprintf(buffer, "Message: %s", message);
+	create_message(connection, buffer);
+	read_server(connection);
+	
+	printf("\nLet\'s send this :)\n");
+	create_message(connection, ".");
+	create_message(connection, "QUIT");
+	read_server(connection);
+	
 	printf("\nTalk to me Banana Spammer\n");
 	read_server(connection);
+	
+	printf("\nByebye my Banana Spamer <3\n");
+	disconnect_client(connection);
+
+	
 
 	return 1;
 
@@ -100,7 +130,7 @@ int connect_client(const char* host){
 
     if (connection < -1){
         perror("socket() creation failed.\n");
-		disconnect_client(connection);
+		return -1;
 		
     }else{
         struct sockaddr_in serverEndpoint;
@@ -109,7 +139,7 @@ int connect_client(const char* host){
 
         if (!hostPointer){
 			fprintf(stderr, "getHostByName() failed: %s.\n", hstrerror(h_errno));
-			disconnect_client(connection);
+			return -1;
 			
         }else{
             serverEndpoint.sin_family = AF_INET;
@@ -118,7 +148,7 @@ int connect_client(const char* host){
 
 			if (connect(connection, (struct sockaddr *) &serverEndpoint, sizeof(serverEndpoint)) != 0){
 				perror("connect() failed");
-				disconnect_client(connection);
+				return -1;
 				
 			}else{
 				printf("Connected to Banana spammer\n");
@@ -128,7 +158,12 @@ int connect_client(const char* host){
 	return connection;
 }
 
-int read_server(int connection){
+void disconnect_client(const int connection) {
+    shutdown(connection, 2);
+    close(connection);
+}
+
+int read_server(const int connection){
 	
 	int goodToGo;
 	
@@ -136,20 +171,29 @@ int read_server(int connection){
 		goodToGo=1;
 		if(error_tester(connection)==4){
 		goodToGo=0;
-		printf("Rohhhh, could not pass this time, lets try again in 6 mins");
+		printf("Oh noooo, am I greylisted? Lets try again in 6 mins");
 		sleep(360);
 		}}while (goodToGo == 0);
 	
 	return 1;
 }
 
-int error_tester(int connection){
+int error_tester(const int connection){
 	
 	char buffer[1024];
+	/*
     int position = 0;
 
-	read(connection, buffer, 3);
-	printf("%s ", buffer);
+	do
+        read(connection, buffer + position, 1); 
+	while (buffer[position++] != ' ');
+
+    buffer[position - 1] = '\0';
+	*/
+
+	read(connection, buffer, sizeof(buffer));
+	//printf("%s ", buffer);
+	printf("%c%c%c ", buffer[0],buffer[1],buffer[2]);
 	
 	switch (buffer[0]){
 		case '1':
@@ -162,8 +206,7 @@ int error_tester(int connection){
 				default:
 				perror("What a potato.. The error code is not possible =( \n");
 			}
-		disconnect_client(connection);
-		exit(1);
+		return -1;
 			
 	    case '2':
 		printf("The server has completed the task successfully.\n");
@@ -179,17 +222,16 @@ int error_tester(int connection){
 		
 	    case '5':
 	    perror("The server has encountered an error.\n");
-		disconnect_client(connection);
-		exit(5);
+		return -1;
 	    
 		default:
 	    perror("What a potato.. The error code is not possible =( \n");
-		disconnect_client(connection);
-		exit(6);
+		return -1;
     	}
 }
 
-void disconnect_client(int connection) {
-    shutdown(connection, 2);
-    close(connection);
+void create_message(const int connection, char* lineToAdd){
+    printf("%s\n", lineToAdd);
+    write(connection, lineToAdd, strlen(lineToAdd));
+    write(connection, "\r\n", 2);
 }
