@@ -181,15 +181,6 @@ int read_server(const int connection){
 int error_tester(const int connection){
 	
 	char buffer[1024];
-	/*
-    int position = 0;
-
-	do
-        read(connection, buffer + position, 1); 
-	while (buffer[position++] != ' ');
-
-    buffer[position - 1] = '\0';
-	*/
 
 	read(connection, buffer, sizeof(buffer));
 	//printf("%s ", buffer);
