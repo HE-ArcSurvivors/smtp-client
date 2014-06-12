@@ -20,6 +20,13 @@ char* subject = "test";
 char* message = "data";
 char* hostname = "localhost";
 
+int connect();
+void disconnect();
+int send();
+int read();
+void write();
+int error();
+
 int main(int argc, char** argv)
 {
     for (int i = 1; i < argc; i++)
