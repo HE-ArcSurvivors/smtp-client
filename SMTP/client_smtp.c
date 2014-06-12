@@ -12,6 +12,8 @@
 //#include <netdb.h>
 //#include <unistd.h>
 
+//TESTETETJHAGSKDJ HKLSDA GA KSLDGJASDJK ASBJH;DJKASDJKASDGKASKJLDASKD
+
 char* sender = "roman.yakovenko@he-arc.ch";
 char* receiver = "benjamin.margueron@he-arc.ch";
 //char* default_sender = "benjamin.margueron@he-arc.ch";
