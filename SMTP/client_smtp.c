@@ -31,12 +31,12 @@
 //#include <sys/types.h>
 
 
-char* sender = "roman.yakovenko@he-arc.ch";
+//char* sender = "roman.yakovenko@he-arc.ch";
 char* receiver = "benjamin.margueron@he-arc.ch";
-//char* sender = "benjamin.margueron@he-arc.ch";
+char* sender = "benjamin.margueron@he-arc.ch";
 //char* receiver = "roman.yakovenko@he-arc.ch";
-char* subject = "test";
-char* message = "data";
+char* subject = "The Penguin god is coming";
+char* message = "Do you have some time to talk about our savior, the Banana King?";
 //char* host = "smtp.alphanet.ch";
 char* host = "157.26.64.10";
 const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentification)
@@ -89,28 +89,40 @@ int send_message(const char* sender, const char* subject, const char* message, c
     connection = connect_client(host);
 	
 	printf("\nLet\'s build our Banana Spam now\n");
-	sprintf(buffer, "HELO client");
+	printf("\nTalk to me Banana Spammer\n");
+	
+	sprintf(buffer, "HELO client\r\n");
 	create_message(connection, buffer);
 	read_server(connection);
-	sprintf(buffer, "MAIL FROM:<%s>", sender);
+	
+	sprintf(buffer, "MAIL FROM:<%s>\r\n", sender);
 	create_message(connection, buffer);
 	read_server(connection);
-	sprintf(buffer, "RCPT TO:<%s>", receiver);
+	
+	sprintf(buffer, "RCPT TO:<%s>\r\n", receiver);
+	create_message(connection, buffer);
+	read_server(connection);
+	
 	create_message(connection, "DATA");
 	read_server(connection);
-	sprintf(buffer, "Subject: %s", subject);
-	create_message(connection, buffer);
-	read_server(connection);
-	sprintf(buffer, "Message: %s", message);
-	create_message(connection, buffer);
-	read_server(connection);
 	
+	//sprintf(buffer, "From: %s", sender);
+	sprintf(buffer, "From: 'Banana King' <banana@penguin-king.com>");
+	create_message(connection, buffer);
+	sprintf(buffer, "To: %s", receiver);
+	create_message(connection, buffer);
+	sprintf(buffer, "Bcc: roman.yakovenko@he-arc.ch");
+	create_message(connection, buffer);
+	sprintf(buffer, "Subject: %s\r\n", subject);
+	create_message(connection, buffer);
+	//create_message("\r\n", buffer);
+	
+	create_message(connection, message);
+
 	printf("\nLet\'s send this :)\n");
-	create_message(connection, ".");
-	create_message(connection, "QUIT");
+	create_message(connection, "\r\n.\r\n");
 	read_server(connection);
-	
-	printf("\nTalk to me Banana Spammer\n");
+	create_message(connection, "QUIT\r\n");
 	read_server(connection);
 	
 	printf("\nByebye my Banana Spamer <3\n");
@@ -169,10 +181,10 @@ int read_server(const int connection){
 	
 	do{
 		goodToGo=1;
-		if(error_tester(connection)==4){
-		goodToGo=0;
-		printf("Oh noooo, am I greylisted? Lets try again in 6 mins");
-		sleep(360);
+		if(error_tester(connection)==1){
+			goodToGo=0;
+			printf("Oh noooo, am I greylisted? Lets try again in 6 mins\n");
+			sleep(360);
 		}}while (goodToGo == 0);
 	
 	return 1;
@@ -183,7 +195,7 @@ int error_tester(const int connection){
 	char buffer[1024];
 
 	read(connection, buffer, sizeof(buffer));
-	//printf("%s ", buffer);
+	
 	printf("%c%c%c ", buffer[0],buffer[1],buffer[2]);
 	
 	switch (buffer[0]){
@@ -201,15 +213,15 @@ int error_tester(const int connection){
 			
 	    case '2':
 		printf("The server has completed the task successfully.\n");
-		return 2;
+		return 0;
 		
 	    case '3':
 		printf("The server has understood the request, but requires further information to complete it.\n");
-		return 3;
+		return 0;
 		
 	    case '4':
 		perror("The server has encountered a temporary failure.\n");
-		return 4;
+		return 1;
 		
 	    case '5':
 	    perror("The server has encountered an error.\n");
