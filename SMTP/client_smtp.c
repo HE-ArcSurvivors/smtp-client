@@ -18,11 +18,11 @@ char* receiver = "benjamin.margueron@he-arc.ch";
 //char* default_reciever = "roman.yakovenko@he-arc.ch";
 char* subject = "test";
 char* message = "data";
-char* hostname = "localhost";
+char* host = "localhost";
 
 int connect();
 void disconnect();
-int send();
+int send(const char*, const char*, const char*, const char*, const char*);
 int read();
 void write();
 int error();
@@ -41,13 +41,19 @@ int main(int argc, char** argv)
                 message = argv[i];
                 break;
             case 4:
-                hostname = argv[i];
+                host = argv[i];
                 break;
             case 5:
                 receiver = argv[i];
                 break;
         }
 
-    printf("Hello world! BANANA COOKIE for the win :)\n");
+    printf("Welcome to our SMTP Client, epicness is coming to you\n");
     return 0;
+}
+
+int send(const char* sender, const char* subject, const char* message, const char* host, const char* receiver) {
+
+    printf("Hello world! Sending BANANA COOKIES for the win :)\n");
+
 }
