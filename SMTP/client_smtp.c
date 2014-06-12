@@ -8,8 +8,14 @@
 
 /*
  * Sources:
- * http://www.spi.ens.fr/beig/systeme/sockets.html
- *
+ * http://www.spi.ens.fr/beig/systeme/sockets.html //sockets
+ * http://man.he.net/man3/h_errno //gethostbyname
+ * http://man7.org/linux/man-pages/man3/fopen.3.htm //fopen
+ * http://www.bien-programmer.fr/pthreads.htm //Thread
+ * http://www.developpez.net/forums/d1188490/c-cpp/c/fork-langage-c/ //Fork
+ * http://www.samlogic.net/articles/smtp-commands-reference.htm //SMTP commands
+ * http://www.serversmtp.com/en/smtp-error //SMTP error codes
+ * http://email.about.com/cs/standards/a/smtp_error_code.htm //SMTP error codes in a nutshell
  */
 
 
@@ -18,6 +24,10 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <unistd.h>
+
+//#include <pthread.h>
+//#include <sys/types.h>
 
 
 char* sender = "roman.yakovenko@he-arc.ch";
@@ -29,12 +39,12 @@ char* message = "data";
 char* host = "smtp.alphanet.ch";
 const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentification)
 
-int connect_client(const char*);
+int connect_client(const char* host);
 void disconnect();
-int send_message(const char*, const char*, const char*, const char*, const char*);
-int read_message();
+int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver);
+int read_server(const int connection);
 void write_message();
-int error();
+int error_tester(FILE *infoServer);
 
 int main(int argc, char** argv)
 {
@@ -64,7 +74,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
-int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver) {
+int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver){
 
     int connection;
 
@@ -83,32 +93,95 @@ int connect_client(const char* host){
 
     connection = socket(AF_INET, SOCK_STREAM, 0);
 
-    if (connection < -1) {
+    if (connection < -1){
         perror("socket() creation failed.\n");
 		return -1;
+		
     }else{
         struct sockaddr_in serverEndpoint;
         struct hostent *hostPointer;
         hostPointer = gethostbyname(host);
 
-        if (!hostPointer) {
+        if (!hostPointer){
 			fprintf(stderr, "getHostByName() failed: %s.\n", hstrerror(h_errno));
 			return -1;
+			
         }else{
             serverEndpoint.sin_family = AF_INET;
             serverEndpoint.sin_port = htons(port);
             memcpy(&serverEndpoint.sin_addr, hostPointer->h_addr, sizeof(serverEndpoint.sin_addr));
 
-			if (connect(connection, (struct sockaddr *) &serverEndpoint, sizeof(serverEndpoint)) != 0) {
+			if (connect(connection, (struct sockaddr *) &serverEndpoint, sizeof(serverEndpoint)) != 0){
 				perror("connect() failed");
 				return -1;
+				
 			}else{
 				printf("Connected to Banana spammer\n");
-				//FILE *f;
 			}
 		}
 	}
-
 	return connection;
+}
 
+int read_server(const int connection){
+	
+	FILE *infoServer;
+	
+	if (infoServer != fdopen(connection, "r+")){
+		perror("fdopen() failed");
+		
+	}else{
+		int goodToGo;
+		
+		do {
+			goodToGo=1;
+			if(error_tester(infoServer)==4){
+			goodToGo=0;
+			printf("Rohhhh, could not pass this time, lets try again in 6 mins");
+			sleep(360);
+			}
+			
+		}while (goodToGo == 0);
+	}
+	return 1;
+}
+
+int error_tester(FILE *infoServer){
+	
+	char buffer[1024];
+	fgets(buffer, 4, infoServer);
+	
+	switch (buffer[0]){
+		case '1':
+		perror("The server does not respond\n");
+			switch (buffer[1]){
+				case '0':
+				perror("The server is unable to connect.\n");
+				case '1':
+				perror("Connection refused or inability to open an SMTP stream.\n");
+				default:
+				perror("What a potato.. The error code is not possible =( \n");
+			}
+		exit(1);
+			
+	    case '2':
+		printf("The server has completed the task successfully.\n");
+		return 2;
+		
+	    case '3':
+		printf("The server has understood the request, but requires further information to complete it.\n");
+		return 3;
+		
+	    case '4':
+		perror("The server has encountered a temporary failure.\n");
+		return 4;
+		
+	    case '5':
+	    perror("The server has encountered an error.\n");
+		exit(5);
+	    
+		default:
+	    perror("What a potato.. The error code is not possible =( \n");
+		exit(6);
+    	}
 }
