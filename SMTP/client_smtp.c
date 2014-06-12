@@ -42,9 +42,9 @@ const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentific
 int connect_client(const char* host);
 void disconnect();
 int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver);
-int read_server(const int connection);
+int read_server(int connection);
 void write_message();
-int error_tester(FILE *infoServer);
+int error_tester(int connection);
 
 int main(int argc, char** argv)
 {
@@ -71,6 +71,8 @@ int main(int argc, char** argv)
 
     send_message(sender,subject,message,host,receiver);
 
+
+
     return 0;
 }
 
@@ -82,6 +84,9 @@ int send_message(const char* sender, const char* subject, const char* message, c
 
 	printf("Initializing the banana mailer\n");
     connection = connect_client(host);
+
+	printf("\nTalk to me Banana Spammer\n");
+	read_server(connection);
 
 	return 1;
 
@@ -123,33 +128,28 @@ int connect_client(const char* host){
 	return connection;
 }
 
-int read_server(const int connection){
+int read_server(int connection){
 	
-	FILE *infoServer;
+	int goodToGo;
 	
-	if (infoServer != fdopen(connection, "r+")){
-		perror("fdopen() failed");
-		
-	}else{
-		int goodToGo;
-		
-		do {
-			goodToGo=1;
-			if(error_tester(infoServer)==4){
-			goodToGo=0;
-			printf("Rohhhh, could not pass this time, lets try again in 6 mins");
-			sleep(360);
-			}
-			
-		}while (goodToGo == 0);
-	}
+	do{
+		goodToGo=1;
+		if(error_tester(connection)==4){
+		goodToGo=0;
+		printf("Rohhhh, could not pass this time, lets try again in 6 mins");
+		sleep(360);
+		}}while (goodToGo == 0);
+	
 	return 1;
 }
 
-int error_tester(FILE *infoServer){
+int error_tester(int connection){
 	
 	char buffer[1024];
-	fgets(buffer, 4, infoServer);
+    int position = 0;
+
+	read(connection, buffer, 3);
+	printf("%s ", buffer);
 	
 	switch (buffer[0]){
 		case '1':
