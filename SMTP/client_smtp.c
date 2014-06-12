@@ -31,10 +31,10 @@
 //#include <sys/types.h>
 
 
-//char* sender = "roman.yakovenko@he-arc.ch";
+char* sender = "roman.yakovenko@he-arc.ch";
 //char* receiver = "benjamin.margueron@he-arc.ch";
-char* sender = "benjamin.margueron@he-arc.ch";
-char* receiver = "roman.yakovenko@he-arc.ch";
+//char* sender = "benjamin.margueron@he-arc.ch";
+char* receiver = "margaux.divernois@he-arc.ch";
 char* subject = "The Penguin god is coming";
 char* message = "Do you have some time to talk about our savior, the Banana King?";
 //char* host = "smtp.alphanet.ch";
@@ -43,7 +43,7 @@ const int port = 25; //25 (sans authentification), 465 (ssl) et 587 (authentific
 
 int connect_client(const char* host);
 void disconnect_client(int connection);
-int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver);
+int send_message(const char* sender, const char* subject, char* message, const char* host, const char* receiver);
 int read_server(const int connection);
 void create_message(const int connection, char* lineToAdd);
 int error_tester(const int connection);
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
     return 0;
 }
 
-int send_message(const char* sender, const char* subject, const char* message, const char* host, const char* receiver){
+int send_message(const char* sender, const char* subject, char* message, const char* host, const char* receiver){
 
     int connection;
 	FILE *build_message;
@@ -226,6 +226,7 @@ int error_tester(const int connection){
 		return -1;
 	    
 		default:
+		//printf("%s ", buffer);
 	    perror("What a potato.. The error code is not possible =( \n");
 		return -1;
     	}
