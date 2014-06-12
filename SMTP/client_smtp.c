@@ -26,15 +26,12 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <unistd.h>
-
 //#include <pthread.h>
-//#include <sys/types.h>
 
-
-char* sender = "roman.yakovenko@he-arc.ch";
+//char* sender = "roman.yakovenko@he-arc.ch";
 //char* receiver = "benjamin.margueron@he-arc.ch";
-//char* sender = "benjamin.margueron@he-arc.ch";
-char* receiver = "margaux.divernois@he-arc.ch";
+char* sender = "benjamin.margueron@he-arc.ch";
+char* receiver = "roman.yakovenko@he-arc.ch";
 char* subject = "The Penguin god is coming";
 char* message = "Do you have some time to talk about our savior, the Banana King?";
 //char* host = "smtp.alphanet.ch";
